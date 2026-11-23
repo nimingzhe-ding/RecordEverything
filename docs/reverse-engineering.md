@@ -198,7 +198,7 @@ report\b)|\bannual\s+report\s+([0-9]{4})(?![0-9])` —— 兼容简繁"报告"�
 addedTime)`，因为图片/备份文件的删除不能用行级 `isDeleted` 表达。**缺图补传**：`图片下载失败, 已请求源设备补传: %1$s ->
 %2$s` + `missing_image_request`——A 传了记录但图没传完，B 写一条缺图请求等 A 上线补传。
 
-**并发控制**两级锁（`zh_strings.txt:1184-1187`）：`🔒 获取同步锁 LockToken: %1$s`（远端用 WebDAV 原生 `LOCK`）、`🔒 本地
+**并发控制**两级锁（`zh_strings.txt:1190-1192`）：`🔒 获取同步锁 LockToken: %1$s`（远端用 WebDAV 原生 `LOCK`）、`🔒 本地
 写入锁获取, 开始应用所有变更---`（保证 UI 读不到半同步状态）。退避明确：`WebDAV 返回 503，已暂停同步 30 分钟`（`:1434`）；
 5 分钟无进展自动中止（`sync_no_progress`）。
 
@@ -219,8 +219,8 @@ CREATE TABLE `sync_pending_commit` (`resourceBindingId` TEXT NOT NULL, ..., `com
 流程是标准 **lease → prepare → commit → mirror**：申请租约（`acquireRequestId`）→ 本地生成 payload 并记下 `payloadHash` +
 `capturedRevisionsJson` → 服务端确认提交（`commit_confirmed`）→ 回写云端索引镜像（`mirror_pending`，失败下次修）。异常路径
 覆盖完整：租约过期→`同步租约已失效，已保留本地修改，请重新同步`；他设备占用→`其他设备正在同步，请稍后重试`；未登录→
-`服务端协调同步需要先登录应用账号`；索引被改→`云端索引出现未知变更，同步已暂停`。`sync_pending_commit` 是**先写本地再提交**：
-进程在提交途中被杀，重启能读回 `payloadJson` 重放或撤销。
+`服务端协调同步需要先登录应用账号`；索引被改→`云端索引出现未知变更，同步已暂停，本地数据已保留`（`zh_strings.txt:1115`）。
+`sync_pending_commit` 是**先写本地再提交**：进程在提交途中被杀，重启能读回 `payloadJson` 重放或撤销。
 
 **备份两套**（别混淆）：`action_portable_backup` 导出数据备份（全库 + 全部图片，zip）、`action_sync_checkpoint_backup` 导出
 WebDAV 同步备份（含同步配置与进度，**含 WebDAV 登录信息**）、`action_backup_restore` 还原备份（**破坏性**：还原前删光当前设备
@@ -239,13 +239,14 @@ Day`——**Day 排最后**，是后期追加的拉新试用档。
 
 ## 九、权限与组件
 
-权限 23 项 + 1 项自有（`AndroidManifest.xml:3-38`）。网络 `INTERNET`/`ACCESS_NETWORK_STATE`/`ACCESS_WIFI_STATE`（判断
-网络类型才触发同步）；图片 `READ_MEDIA_IMAGES`/`READ_EXTERNAL_STORAGE`(≤32)/`WRITE_EXTERNAL_STORAGE`(≤28)/
-`ACCESS_MEDIA_LOCATION`（读 EXIF 拍摄地）；提醒 `SCHEDULE_EXACT_ALARM`/`POST_NOTIFICATIONS`/`VIBRATE`/`WAKE_LOCK`/
-`RECEIVE_BOOT_COMPLETED`；日历 `READ_CALENDAR`/`WRITE_CALENDAR`；前台服务 `FOREGROUND_SERVICE`/`..._SPECIAL_USE`；
-生物识别 `USE_BIOMETRIC`/`USE_FINGERPRINT`；第三方 `BIND_GET_INSTALL_REFERRER_SERVICE`/`AD_ID`/`ACCESS_ADSERVICES_*`。
+`AndroidManifest.xml:3-38` 共 23 条 `uses-permission`（22 条外部 + 1 条自有签名级）与 1 条 `<permission>` 声明。网络
+`INTERNET`/`ACCESS_NETWORK_STATE`/`ACCESS_WIFI_STATE`（判断网络类型才触发同步）；图片 `READ_MEDIA_IMAGES`/
+`READ_EXTERNAL_STORAGE`(≤32)/`WRITE_EXTERNAL_STORAGE`(≤28)/`ACCESS_MEDIA_LOCATION`（读 EXIF 拍摄地）；提醒
+`SCHEDULE_EXACT_ALARM`/`POST_NOTIFICATIONS`/`VIBRATE`/`WAKE_LOCK`/`RECEIVE_BOOT_COMPLETED`；日历 `READ_CALENDAR`/
+`WRITE_CALENDAR`；前台服务 `FOREGROUND_SERVICE`/`..._SPECIAL_USE`；生物识别 `USE_BIOMETRIC`/`USE_FINGERPRINT`；第三方
+`BIND_GET_INSTALL_REFERRER_SERVICE`/`AD_ID`/`ACCESS_ADSERVICES_*`。
 自有签名级 `top.ideaapp.timemark.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION` 给动态广播加保护（Android 14 后的正确做法）；
-`<queries>` 声明要感知小红书、支付宝（大陆+香港）、微信、淘宝。
+`<queries>` 声明要感知小红书、支付宝（含 RC 变体）、微信、淘宝 `tbopen`。
 
 组件清单 297 行、69 个标签（27 activity + 27 receiver + 10 service + 5 provider）。**15 个桌面小组件**（`exported="true"` +
 `APPWIDGET_UPDATE`，`AndroidManifest.xml:63-153`）：周视图 / 周视图图标 / 分组事件 / 待办（中·小）/ 计时（中·小）/ 周打卡
@@ -258,8 +259,7 @@ Glance：`PerformFastRecordClickAction`（一键打卡）、`PerformCompleteTodo
 4 个业务 receiver（`exported="false"`）：`PeriodReminderReceiver`、`RecordReminderReceiver`、`RemindAfterDayReceiver`、
 `TodoReminderReceiver`。10 个 service 中只有 `RecordTimerForegroundService` 是自家的，其余为 WorkManager ×2、Room
 `MultiInstanceInvalidationService`、Glance `GlanceRemoteViewsService`、`RemoteViewsCompatService`、Firebase
-`ComponentDiscoveryService`、GA ×2、`android.ext.adservices`。5 个 provider：`FileProvider`
-（`top.ideaapp.timemark.provider`）、`FileKitFileProvider`、`AndroidContextProvider`、`InitializationProvider`、Firebase init。
+`ComponentDiscoveryService`、GA ×2、`android.ext.adservices`。5 个 provider 全为框架组件：`FileProvider`（`top.ideaapp.timemark.provider`）、`FileKitFileProvider`、`AndroidContextProvider`、`InitializationProvider`、Firebase init。
 
 **后台任务** 7 个 Worker（`work/out/sources/top/ideaapp/data/worker/`）：`DeltaSyncWorker`、`FullSnapshotWorker`、
 `ImageSyncWorker`、`WebDavCleanupWorker`、`UpdateCleanFileIndexWorker`、`CleanUpZombieRecordsWorker`、`TempFileCleanupWorker`

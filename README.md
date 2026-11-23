@@ -128,7 +128,7 @@ app/src/main/java/me/nimingzhe/recordeverything/
 | 视图 | 月/周/时间线/照片/周期 + 17 种格子渲染 | 月历（红绿 + 农历）+ 统计 |
 | 统计 | 数据总览/柱状/目标/热图/时长 | 结余/柱状/类别/渠道 |
 | 依赖 | Firebase、Bugly、支付宝、微信 SDK | 仅 AndroidX + Compose |
-| 体积 | 14.5 MB | debug APK 约 9 MB |
+| 体积 | 14.5 MB | debug APK 9.6 MB |
 | 提醒/小组件/待办 | 有 | 无（本版未做） |
 
 逆向里最值得抄的三点，已经落进这里：事件+属性+记录值的三层数据模型、中文文案充当唯一的解析词表、
