@@ -1,0 +1,21 @@
+# Gradle / Android
+.gradle/
+build/
+app/build/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IntelliJ / Android Studio
+.idea/
+*.iml
+*.hprof
+
+# macOS
+.DS_Store
+
+# 签名与密钥（永不提交）
+*.jks
+*.keystore
+keystore.properties

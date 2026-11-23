@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">记录</string>
+    <string name="tab_chat">聊天</string>
+    <string name="tab_calendar">日历</string>
+    <string name="tab_stats">统计</string>
+    <string name="tab_settings">设置</string>
+    <string name="input_hint">例如：昨天午饭 25 微信</string>
+    <string name="keep_this">只记这笔</string>
+    <string name="recorded">已记录</string>
+</resources>
