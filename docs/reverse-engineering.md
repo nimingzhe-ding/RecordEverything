@@ -268,8 +268,8 @@ Glance：`PerformFastRecordClickAction`（一键打卡）、`PerformCompleteTodo
 
 ## 十、与 RecordEverything 的差异
 
-RecordEverything（`me.nimingzhe.recordeverything`）是**重构**，不是复刻。当前脚手架只有 `MainActivity` + 空 Manifest，依赖
-仅 compose-bom 2024.02.02 + material3 + activity-compose，尚无 Room / WorkManager / WebDAV。
+RecordEverything（`me.nimingzhe.recordeverything`）是**重构**，不是复刻。当前实现为单 Activity + 四个 Compose 页面、单文件 JSON 持久层，依赖仅 compose-bom 2024.02.02 + material3 +
+activity-compose，无 Room / WorkManager / WebDAV。
 
 **保留**（同构）：`project / variable / record_value` 三元组（表达"任意记录场景"的最小完备抽象）；本地优先、无自建后端（数据
 主权 + 零运维 + 隐私，也是 MarkTimes 唯一的差异化）；软删除 + `version/isDeleted/lastModTime`（跨设备同步前提，后补代价极大）；
@@ -279,15 +279,18 @@ RecordEverything（`me.nimingzhe.recordeverything`）是**重构**，不是复�
 协调同步 lease/commit（需配套后端，单机场景价值不抵复杂度）；Firebase Analytics / Bugly / 广告 ID（隐私优先，且显著抬高
 商店审核成本）；PDF 手帐导出 / 小票分享 / 年度报告插画（视觉资产依赖重）；15 种小组件（先做 1–2 种核心）。
 
-**改造**（关键分歧：表单优先 → 对话优先）。MarkTimes 是**表单优先**：点"+" → 弹窗 → 选属性 → 填值 → 保存；`fast_log` 是
-对此的妥协（整条流程压成一个按钮），代价是那条记录**没有任何属性值**。RecordEverything 改为**对话优先**：用户打"午饭 35 块
-很难吃"，解析器拆成 `{事件: 午饭, 价格: 35, 评分: 1}`，再落成 `record + record_value`。**数据模型完全不变，变的只是入口**
-——这让"有属性的快速记录"成为可能，补上了 Fast 与完整表单之间的断层。
+**改造**（关键分歧：表单优先 → 一句话优先）。MarkTimes 是**表单优先**：点"+" → 弹窗 → 选属性 → 填值 → 保存；
+`fast_log` 是对此的妥协（把整条流程压成一个按钮），代价是那条记录**没有任何属性值**。RecordEverything 改为**一句话优先**：
+输入"明天下午三点 开会"，解析器拆成 `{标题: 开会, 日期: 11/24, 时间: 15:00, 分组: 工作}`，先给一张可编辑的草稿卡片，
+用户确认后才落库。**"先草稿、后落库"是刻意的设计**：规则解析一定会有错，关键是让错误在写进数据之前被看见。
 
-**该对话式 UI 在 MarkTimes 中不存在**：`只记这笔` / `结余` / `这笔看着对吗` 三条文案，在 `work/zh_strings.txt`、
-`work/strings_decoded.json`、三个 dex、`resources.arsc` 中 grep 均为 0 命中——它是本次重构引入的**设计增量**，实现时不要
-去找对应源码。另：`结余` 暗示"余额"，而 MarkTimes 无账户余额模型（只有 `goalValue` 目标值），若坚持该交互需在 `project`
-之外新增"账本"聚合，属于**超出原设计范围**的扩展。
+产品定位也做了取舍：MarkTimes 是"记录一切"（事件 + 自定义属性 + 打卡 + 计时 + 待办 + 15 个小组件），
+RecordEverything 只做**待办 / 日程**这一个场景，先把"一句话 → 一条事"这条路走顺，而不是把六种视图都做一遍。
+
+**关于 MarkTimes 有没有"对话式记账"**：本次重建早期曾按"聊天式记账"实现过一版，其文案（`只记这笔` / `结余` /
+`这笔看着对吗`）在 `work/zh_strings.txt`、`work/strings_decoded.json`、三个 dex、`resources.arsc` 中 grep 均为 0 命中——
+说明**该 UI 在 MarkTimes 中并不存在**，是当时误引入的设计，已整体移除，不作为本项目的设计依据。
+另：`结余` 暗示"账户余额"，而 MarkTimes 无账户余额模型（只有 `goalValue` 目标值），本来就不在原设计的范围内。
 
 ## 十一、结论与可复用的设计经验
 

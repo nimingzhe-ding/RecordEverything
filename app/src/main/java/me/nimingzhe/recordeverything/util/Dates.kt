@@ -65,6 +65,8 @@ object Dates {
             1 -> "昨天"
             2 -> "前天"
             -1 -> "明天"
+            -2 -> "后天"
+            -3 -> "大后天"
             else -> formatDateShort(millis)
         }
     }

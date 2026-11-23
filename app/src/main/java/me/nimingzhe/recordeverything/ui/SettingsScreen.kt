@@ -1,13 +1,11 @@
 package me.nimingzhe.recordeverything.ui
 
-import android.content.Context
 import android.content.Intent
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.RowScope
 import androidx.compose.foundation.layout.Spacer
@@ -18,7 +16,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Text
@@ -35,12 +32,16 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.FileProvider
 import me.nimingzhe.recordeverything.util.Dates
 import java.io.File
 
 @Composable
 fun SettingsScreen(
     state: UiState,
+    counts: Triple<Int, Int, Int>,
+    streak: Int,
+    onExportMarkdown: () -> String,
     onExportJson: () -> String,
     onExportCsv: () -> String,
     onClear: () -> Unit
@@ -48,88 +49,112 @@ fun SettingsScreen(
     val context = LocalContext.current
     var confirmClear by remember { mutableStateOf(false) }
     var message by remember { mutableStateOf<String?>(null) }
-    val total = state.records.size
-    val moneyCount = state.records.count { r ->
-        val ev = state.events.firstOrNull { it.id == r.eventId }
-        me.nimingzhe.recordeverything.data.Ledger.amount(r, ev) != null
+
+    fun share(name: String, content: String, mime: String) {
+        try {
+            val dir = File(context.cacheDir, "export").apply { mkdirs() }
+            val f = File(dir, name)
+            f.writeText(content)
+            val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", f)
+            val intent = Intent(Intent.ACTION_SEND).apply {
+                type = mime
+                putExtra(Intent.EXTRA_STREAM, uri)
+                addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
+            }
+            context.startActivity(Intent.createChooser(intent, "导出 $name"))
+        } catch (t: Throwable) {
+            message = "导出失败：${t.message}"
+        }
     }
 
-    LazyColumn(Modifier.fillMaxSize(), contentPadding = androidx.compose.foundation.layout.PaddingValues(bottom = 30.dp)) {
+    LazyColumn(
+        Modifier.fillMaxSize(),
+        contentPadding = PaddingValues(start = 14.dp, end = 14.dp, top = 10.dp, bottom = 28.dp),
+        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(10.dp)
+    ) {
         item {
-            Column(Modifier.padding(horizontal = 18.dp, vertical = 12.dp)) {
-                Text("设置", color = Palette.Text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+            Column(Modifier.padding(horizontal = 4.dp, vertical = 4.dp)) {
+                Text("设置", color = Palette.Text, fontSize = 22.sp, fontWeight = FontWeight.SemiBold)
                 Text("数据都在你自己的手机上", color = Palette.TextDim, fontSize = 11.sp)
             }
         }
 
         item {
-            Column(
-                Modifier
-                    .padding(horizontal = 14.dp)
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(18.dp))
-                    .background(Palette.Surface)
-                    .padding(18.dp)
-            ) {
+            SectionCard(Modifier.fillMaxWidth()) {
                 Row(verticalAlignment = Alignment.CenterVertically) {
                     Box(
-                        Modifier.size(44.dp).clip(RoundedCornerShape(12.dp))
+                        Modifier
+                            .size(44.dp)
+                            .clip(RoundedCornerShape(12.dp))
                             .background(Palette.SurfaceHi),
                         contentAlignment = Alignment.Center
                     ) { Text("📓", fontSize = 20.sp) }
                     Spacer(Modifier.width(12.dp))
                     Column {
-                        Text("记录", color = Palette.Text, fontSize = 16.sp, fontWeight = FontWeight.Medium)
-                        Text(
-                            "$total 条记录 · 其中 $moneyCount 笔有金额",
-                            color = Palette.TextDim, fontSize = 11.sp
-                        )
+                        Text("RecordEverything", color = Palette.Text, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text("记录 · 待办 · 日历，全部离线", color = Palette.TextDim, fontSize = 11.sp)
                     }
                 }
                 Spacer(Modifier.height(14.dp))
-                Row {
-                    Stat("连续", "${Dates.streak(state.records.map { it.time })} 天")
-                    Stat("事件", "${state.events.size} 个")
-                    Stat("最早", state.records.minByOrNull { it.time }?.let { Dates.formatDateShort(it.time) } ?: "—")
+                Row(Modifier.fillMaxWidth()) {
+                    Stat("未完成", "${counts.first}")
+                    Stat("今天", "${counts.second}")
+                    Stat("连续", "${streak}天")
                 }
             }
         }
 
-        item { GroupTitle("导出与备份") }
         item {
-            SettingRow("导出 JSON", "完整字段，可自己写脚本处理") {
-                saveAndShare(context, "recordeverything.json", onExportJson())
-                message = "已导出 JSON"
-            }
-        }
-        item {
-            SettingRow("导出 CSV", "直接扔进 Excel / 表格") {
-                saveAndShare(context, "recordeverything.csv", onExportCsv())
-                message = "已导出 CSV"
-            }
-        }
-
-        item { GroupTitle("记录方式") }
-        item {
-            InfoRow("聊天式输入", "一句中文自动拆出金额、类别、渠道、日期")
-        }
-        item {
-            InfoRow("离线运行", "不联网、不上传、不需要账号")
-        }
-        item {
-            InfoRow("农历与红绿", "日历格子带农历，支出红、收入绿")
-        }
-
-        item { GroupTitle("危险操作") }
-        item {
-            SettingRow("清空全部记录", "只删记录，保留事件结构", danger = true) {
-                confirmClear = true
+            SectionCard(Modifier.fillMaxWidth()) {
+                Text("导出", color = Palette.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(10.dp))
+                SettingRow("Markdown 清单", "带勾选框，可以直接贴进笔记") {
+                    share("recordeverything.md", onExportMarkdown(), "text/markdown")
+                }
+                SettingRow("JSON 数据", "完整备份，字段与原 App 对齐") {
+                    share("recordeverything.json", onExportJson(), "application/json")
+                }
+                SettingRow("CSV 表格", "标题 / 日期 / 时间 / 分组 / 状态 / 备注") {
+                    share("recordeverything.csv", onExportCsv(), "text/csv")
+                }
             }
         }
 
         item {
-            Box(Modifier.fillMaxWidth().padding(20.dp), contentAlignment = Alignment.Center) {
-                Text("RecordEverything · 参考 MarkTimes 1.5.1 的结构重写", color = Palette.TextDim.copy(alpha = 0.6f), fontSize = 10.sp)
+            SectionCard(Modifier.fillMaxWidth()) {
+                Text("关于", color = Palette.Text, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(10.dp))
+                InfoRow("数据存储", "应用私有目录下的一个 JSON")
+                InfoRow("网络", "不联网，没有账号，没有会员")
+                InfoRow("来源", "对照 MarkTimes 的本地记录能力重写")
+            }
+        }
+
+        item {
+            SectionCard(Modifier.fillMaxWidth()) {
+                Text("清除", color = Palette.Expense, fontSize = 13.sp, fontWeight = FontWeight.Medium)
+                Spacer(Modifier.height(6.dp))
+                Text("会删掉本地所有待办，不可恢复。", color = Palette.TextDim, fontSize = 11.sp)
+                Spacer(Modifier.height(10.dp))
+                Box(
+                    Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(Palette.Expense.copy(alpha = 0.14f))
+                        .clickable { confirmClear = true }
+                        .padding(horizontal = 16.dp, vertical = 9.dp)
+                ) {
+                    Text("清空全部数据", color = Palette.Expense, fontSize = 12.sp)
+                }
+            }
+        }
+
+        item {
+            Column(Modifier.padding(top = 4.dp, bottom = 24.dp)) {
+                Text(
+                    "本地优先 · 一个 JSON 装下全部记录",
+                    color = Palette.TextDim.copy(alpha = 0.7f),
+                    fontSize = 10.sp
+                )
             }
         }
     }
@@ -137,30 +162,26 @@ fun SettingsScreen(
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("清空全部记录？", color = Palette.Text) },
-            text = { Text("这个操作不可撤销，建议先导出一份 JSON。", color = Palette.TextDim) },
+            title = { Text("清空全部数据？") },
+            text = { Text("所有待办都会被删除，无法恢复。") },
             confirmButton = {
                 TextButton(onClick = {
-                    onClear()
                     confirmClear = false
+                    onClear()
                     message = "已清空"
                 }) { Text("清空", color = Palette.Expense) }
             },
             dismissButton = {
-                TextButton(onClick = { confirmClear = false }) { Text("取消", color = Palette.TextDim) }
-            },
-            containerColor = Palette.Surface
+                TextButton(onClick = { confirmClear = false }) { Text("算了") }
+            }
         )
     }
 
     message?.let {
         AlertDialog(
             onDismissRequest = { message = null },
-            title = { Text(it, color = Palette.Text) },
-            confirmButton = {
-                TextButton(onClick = { message = null }) { Text("好", color = Palette.Gold) }
-            },
-            containerColor = Palette.Surface
+            confirmButton = { TextButton(onClick = { message = null }) { Text("好") } },
+            text = { Text(it) }
         )
     }
 }
@@ -168,77 +189,33 @@ fun SettingsScreen(
 @Composable
 private fun RowScope.Stat(label: String, value: String) {
     Column(Modifier.weight(1f)) {
+        Text(value, color = Palette.Text, fontSize = 18.sp, fontWeight = FontWeight.SemiBold)
         Text(label, color = Palette.TextDim, fontSize = 10.sp)
-        Spacer(Modifier.height(3.dp))
-        Text(value, color = Palette.Text, fontSize = 14.sp)
     }
 }
 
 @Composable
-private fun GroupTitle(text: String) {
-    Text(
-        text,
-        modifier = Modifier.padding(start = 22.dp, top = 22.dp, bottom = 8.dp),
-        color = Palette.TextDim, fontSize = 11.sp
-    )
-}
-
-@Composable
-private fun SettingRow(
-    title: String,
-    subtitle: String,
-    danger: Boolean = false,
-    onClick: () -> Unit
-) {
+private fun SettingRow(title: String, desc: String, onClick: () -> Unit) {
     Row(
         Modifier
             .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 3.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Palette.Surface)
+            .clip(RoundedCornerShape(12.dp))
             .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 14.dp),
+            .padding(vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column(Modifier.weight(1f)) {
-            Text(title, color = if (danger) Palette.Expense else Palette.Text, fontSize = 14.sp)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, color = Palette.TextDim, fontSize = 11.sp)
+            Text(title, color = Palette.Text, fontSize = 13.sp)
+            Text(desc, color = Palette.TextDim, fontSize = 10.sp)
         }
-        Text("›", color = Palette.TextDim, fontSize = 16.sp)
+        Text("›", color = Palette.TextDim, fontSize = 15.sp)
     }
 }
 
 @Composable
-private fun InfoRow(title: String, subtitle: String) {
-    Row(
-        Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 14.dp, vertical = 3.dp)
-            .clip(RoundedCornerShape(14.dp))
-            .background(Palette.Surface)
-            .padding(horizontal = 16.dp, vertical = 14.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = Palette.Text, fontSize = 14.sp)
-            Spacer(Modifier.height(2.dp))
-            Text(subtitle, color = Palette.TextDim, fontSize = 11.sp)
-        }
+private fun InfoRow(k: String, v: String) {
+    Row(Modifier.fillMaxWidth().padding(vertical = 5.dp)) {
+        Text(k, color = Palette.TextDim, fontSize = 11.sp, modifier = Modifier.width(72.dp))
+        Text(v, color = Palette.Text, fontSize = 11.sp)
     }
-}
-
-private fun saveAndShare(context: Context, name: String, content: String) {
-    val dir = File(context.cacheDir, "export")
-    if (!dir.exists()) dir.mkdirs()
-    val f = File(dir, name)
-    f.writeText(content)
-    val intent = Intent(Intent.ACTION_SEND).apply {
-        type = if (name.endsWith("json")) "application/json" else "text/csv"
-        putExtra(Intent.EXTRA_STREAM, androidx.core.content.FileProvider.getUriForFile(
-            context, "${context.packageName}.fileprovider", f
-        ))
-        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
-    }
-    context.startActivity(Intent.createChooser(intent, "导出"))
 }

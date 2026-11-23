@@ -23,6 +23,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -31,14 +34,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import me.nimingzhe.recordeverything.data.Todo
+import me.nimingzhe.recordeverything.ui.AllScreen
 import me.nimingzhe.recordeverything.ui.AppViewModel
 import me.nimingzhe.recordeverything.ui.CalendarScreen
-import me.nimingzhe.recordeverything.ui.ChatScreen
+import me.nimingzhe.recordeverything.ui.EditDialog
 import me.nimingzhe.recordeverything.ui.Palette
 import me.nimingzhe.recordeverything.ui.RecordEverythingTheme
 import me.nimingzhe.recordeverything.ui.SettingsScreen
-import me.nimingzhe.recordeverything.ui.StatsScreen
 import me.nimingzhe.recordeverything.ui.Tab
+import me.nimingzhe.recordeverything.ui.TodayScreen
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -55,6 +60,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 private fun Root(vm: AppViewModel = viewModel()) {
     val state by vm.state.collectAsState()
+    var editing by remember { mutableStateOf<Todo?>(null) }
 
     Column(
         Modifier
@@ -64,9 +70,16 @@ private fun Root(vm: AppViewModel = viewModel()) {
     ) {
         Box(Modifier.weight(1f)) {
             when (state.tab) {
-                Tab.CHAT -> ChatScreen(
+                Tab.TODAY -> TodayScreen(
                     state = state,
-                    onSend = vm::send,
+                    overdue = vm.overdue(),
+                    todayList = vm.todayList(),
+                    onToggle = vm::toggle,
+                    onEdit = { editing = it },
+                    onTomorrow = vm::snoozeToTomorrow,
+                    onToday = { vm.setDue(it, System.currentTimeMillis()) },
+                    onDelete = vm::delete,
+                    onAdd = vm::compose,
                     onDraftChange = vm::updateDraft,
                     onConfirm = vm::confirmDraft,
                     onCancel = vm::cancelDraft
@@ -76,17 +89,37 @@ private fun Root(vm: AppViewModel = viewModel()) {
                     onPrevMonth = { vm.shiftMonth(-1) },
                     onNextMonth = { vm.shiftMonth(1) },
                     onSelectDay = vm::selectDay,
-                    onToday = vm::jumpToToday,
-                    onDelete = vm::deleteRecord,
-                    onQuickAdd = vm::addMoney
+                    onToggle = vm::toggle,
+                    onEdit = { editing = it },
+                    onTomorrow = vm::snoozeToTomorrow,
+                    onToday = { vm.setDue(it, System.currentTimeMillis()) },
+                    onDelete = vm::delete,
+                    onAdd = vm::compose,
+                    onDraftChange = vm::updateDraft,
+                    onConfirm = vm::confirmDraft,
+                    onCancel = vm::cancelDraft
                 )
-                Tab.STATS -> StatsScreen(
+                Tab.ALL -> AllScreen(
                     state = state,
-                    onPrevMonth = { vm.shiftMonth(-1) },
-                    onNextMonth = { vm.shiftMonth(1) }
+                    list = vm.allFiltered(),
+                    counts = vm.counts(),
+                    onFilter = vm::setFilter,
+                    onGroup = vm::setGroup,
+                    onToggle = vm::toggle,
+                    onEdit = { editing = it },
+                    onTomorrow = vm::snoozeToTomorrow,
+                    onToday = { vm.setDue(it, System.currentTimeMillis()) },
+                    onDelete = vm::delete,
+                    onAdd = vm::compose,
+                    onDraftChange = vm::updateDraft,
+                    onConfirm = vm::confirmDraft,
+                    onCancel = vm::cancelDraft
                 )
                 Tab.SETTINGS -> SettingsScreen(
                     state = state,
+                    counts = vm.counts(),
+                    streak = vm.streak(),
+                    onExportMarkdown = vm::exportMarkdown,
                     onExportJson = vm::exportJson,
                     onExportCsv = vm::exportCsv,
                     onClear = vm::clearAll
@@ -95,14 +128,25 @@ private fun Root(vm: AppViewModel = viewModel()) {
         }
         BottomBar(current = state.tab, onSelect = vm::setTab)
     }
+
+    editing?.let { todo ->
+        EditDialog(
+            todo = todo,
+            onDismiss = { editing = null },
+            onSave = {
+                vm.update(it)
+                editing = null
+            }
+        )
+    }
 }
 
 private data class TabItem(val tab: Tab, val label: String, val icon: String)
 
 private val tabs = listOf(
-    TabItem(Tab.CHAT, "聊天", "💬"),
+    TabItem(Tab.TODAY, "今天", "☀️"),
     TabItem(Tab.CALENDAR, "日历", "📅"),
-    TabItem(Tab.STATS, "统计", "📊"),
+    TabItem(Tab.ALL, "全部", "☰"),
     TabItem(Tab.SETTINGS, "设置", "⚙️")
 )
 
@@ -113,7 +157,7 @@ private fun BottomBar(current: Tab, onSelect: (Tab) -> Unit) {
             .fillMaxWidth()
             .background(Palette.Bg)
             .navigationBarsPadding()
-            .padding(horizontal = 12.dp, vertical = 6.dp),
+            .padding(horizontal = 10.dp, vertical = 6.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         tabs.forEach { item ->
