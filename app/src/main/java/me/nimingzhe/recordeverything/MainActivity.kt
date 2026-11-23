@@ -46,7 +46,6 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import me.nimingzhe.recordeverything.data.Todo
 import me.nimingzhe.recordeverything.ui.AllScreen
@@ -59,6 +58,7 @@ import me.nimingzhe.recordeverything.ui.RecordEverythingTheme
 import me.nimingzhe.recordeverything.ui.SettingsScreen
 import me.nimingzhe.recordeverything.ui.Tab
 import me.nimingzhe.recordeverything.ui.TodayScreen
+import me.nimingzhe.recordeverything.ui.Type
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -233,9 +233,8 @@ private fun BottomPill(current: Tab, onSelect: (Tab) -> Unit) {
                     Text(
                         item.label,
                         color = if (selected) Palette.Gold else Palette.TextDim,
-                        fontSize = 9.sp,
-                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
-                        letterSpacing = 0.6.sp
+                        style = Type.nav,
+                        fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal
                     )
                 }
             }

@@ -78,14 +78,7 @@ fun RowDivider(indent: Dp = 0.dp) {
 /** 小标题：字距拉开，全小写气质，用于"过期 / 今天 / 已做完"。 */
 @Composable
 fun Eyebrow(text: String, color: Color = Palette.TextDim, modifier: Modifier = Modifier) {
-    Text(
-        text,
-        modifier = modifier,
-        color = color,
-        fontSize = 10.sp,
-        fontWeight = FontWeight.Medium,
-        letterSpacing = 1.4.sp
-    )
+    Text(text, modifier = modifier, color = color, style = Type.eyebrow)
 }
 
 // ───────────────────────── 控件 ─────────────────────────
@@ -119,14 +112,13 @@ fun Chip(
         verticalAlignment = Alignment.CenterVertically
     ) {
         if (leading != null) {
-            Text(leading, fontSize = 10.sp)
+            Text(leading, style = Type.label, color = Palette.TextDim)
             Spacer(Modifier.width(5.dp))
         }
         Text(
             text,
             color = if (selected) Palette.Gold else Palette.TextMid,
-            fontSize = 12.sp,
-            fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
+            style = if (selected) Type.labelStrong else Type.label,
             maxLines = 1
         )
     }
@@ -154,8 +146,7 @@ fun GoldButton(
         Text(
             text,
             color = if (enabled) Color(0xFF231A0A) else Palette.TextDim,
-            fontSize = 13.sp,
-            fontWeight = FontWeight.SemiBold
+            style = Type.button
         )
     }
 }
@@ -170,7 +161,7 @@ fun GhostButton(text: String, modifier: Modifier = Modifier, onClick: () -> Unit
             .clickable { onClick() }
             .padding(horizontal = 14.dp, vertical = 9.dp),
         color = Palette.TextMid,
-        fontSize = 13.sp
+        style = Type.button
     )
 }
 
@@ -225,7 +216,7 @@ fun CheckCircle(checked: Boolean, onClick: () -> Unit) {
         label = "checkFill"
     )
     val line by animateColorAsState(
-        if (checked) Palette.Gold else Palette.TextDim.copy(alpha = 0.45f),
+        if (checked) Palette.Gold else Palette.Stroke,
         tween(180),
         label = "checkLine"
     )
@@ -242,7 +233,7 @@ fun CheckCircle(checked: Boolean, onClick: () -> Unit) {
             visible = checked,
             enter = fadeIn(tween(120)) + scaleIn(spring(dampingRatio = 0.5f), initialScale = 0.4f)
         ) {
-            Text("✓", color = Color(0xFF231A0A), fontSize = 11.sp, fontWeight = FontWeight.Bold)
+            Text("✓", color = Color(0xFF231A0A), style = Type.caption, fontWeight = FontWeight.Bold)
         }
     }
 }
@@ -271,22 +262,12 @@ fun EmptyBlock(
             .padding(vertical = 40.dp),
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        Text("✦", color = Palette.GoldDeep, fontSize = 18.sp)
+        Text("✦", color = Palette.GoldSoft, style = Type.screen)
         Spacer(Modifier.height(14.dp))
-        Text(
-            title,
-            color = Palette.TextMid,
-            fontSize = 13.sp,
-            textAlign = TextAlign.Center
-        )
+        Text(title, color = Palette.TextMid, style = Type.body, textAlign = TextAlign.Center)
         if (hint != null) {
             Spacer(Modifier.height(6.dp))
-            Text(
-                hint,
-                color = Palette.TextDim,
-                fontSize = 11.sp,
-                textAlign = TextAlign.Center
-            )
+            Text(hint, color = Palette.TextDim, style = Type.caption, textAlign = TextAlign.Center)
         }
     }
 }

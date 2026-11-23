@@ -89,11 +89,7 @@ fun EditDialog(
                 value = title,
                 onValueChange = { title = it },
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(
-                    color = Palette.Text,
-                    fontSize = 17.sp,
-                    fontWeight = FontWeight.Medium
-                ),
+                textStyle = Type.title.copy(color = Palette.Text),
                 cursorBrush = SolidColor(Palette.Gold),
                 maxLines = 3
             )
@@ -102,12 +98,12 @@ fun EditDialog(
                 value = note,
                 onValueChange = { note = it },
                 modifier = Modifier.fillMaxWidth(),
-                textStyle = TextStyle(color = Palette.TextMid, fontSize = 13.sp),
+                textStyle = Type.body.copy(color = Palette.TextMid),
                 cursorBrush = SolidColor(Palette.Gold),
                 maxLines = 3,
                 decorationBox = { inner ->
                     Box {
-                        if (note.isEmpty()) Text("加个备注", color = Palette.TextDim, fontSize = 13.sp)
+                        if (note.isEmpty()) Text("加个备注", color = Palette.TextDim, style = Type.body)
                         inner()
                     }
                 }
@@ -123,7 +119,7 @@ fun EditDialog(
             }
             if (due != null && due != today && due != tomorrow && due != dayAfter) {
                 Spacer(Modifier.height(6.dp))
-                Text(Dates.formatDate(due!!), color = Palette.Gold, fontSize = 11.sp)
+                Text(Dates.formatDate(due!!), color = Palette.Gold, style = Type.caption)
             }
 
             Spacer(Modifier.height(16.dp))
@@ -164,7 +160,7 @@ fun EditDialog(
                 Text(
                     "⚡ 重要",
                     color = if (important) Palette.Gold else Palette.TextDim,
-                    fontSize = 12.sp
+                    style = Type.labelStrong
                 )
             }
 
@@ -173,7 +169,7 @@ fun EditDialog(
                 Text(
                     "定在 " + Dates.formatDateShort(due!!) + " " + TodoParser.fmtMinute(time!!),
                     color = Palette.TextDim,
-                    fontSize = 10.sp
+                    style = Type.caption
                 )
             }
 
@@ -186,7 +182,7 @@ fun EditDialog(
                         .clickable { onDelete(todo) }
                         .padding(horizontal = 14.dp, vertical = 9.dp),
                     color = Palette.Danger,
-                    fontSize = 13.sp
+                    style = Type.body
                 )
                 Spacer(Modifier.weight(1f))
                 GhostButton("取消", onClick = onDismiss)
@@ -211,11 +207,5 @@ fun EditDialog(
 
 @Composable
 private fun FieldLabel(text: String) {
-    Text(
-        text,
-        color = Palette.TextDim,
-        fontSize = 10.sp,
-        letterSpacing = 1.4.sp,
-        modifier = Modifier.padding(bottom = 8.dp)
-    )
+    Text(text, color = Palette.TextDim, style = Type.eyebrow, modifier = Modifier.padding(bottom = 8.dp))
 }

@@ -87,7 +87,7 @@ fun QuickAddBar(
                 onValueChange = { text = it },
                 modifier = Modifier.weight(1f),
                 singleLine = true,
-                textStyle = TextStyle(color = Palette.Text, fontSize = 14.sp),
+                textStyle = Type.body.copy(color = Palette.Text),
                 cursorBrush = SolidColor(Palette.Gold),
                 keyboardOptions = KeyboardOptions(imeAction = ImeAction.Send),
                 keyboardActions = KeyboardActions(onSend = {
@@ -99,7 +99,7 @@ fun QuickAddBar(
                 decorationBox = { inner ->
                     Box {
                         if (text.isEmpty()) {
-                            Text(hint, color = Palette.TextDim, fontSize = 13.sp, maxLines = 1)
+                            Text(hint, color = Palette.TextDim, style = Type.body, maxLines = 1)
                         }
                         inner()
                     }
@@ -125,7 +125,7 @@ fun QuickAddBar(
                 Text(
                     "↑",
                     color = if (active) Color(0xFF231A0A) else Palette.TextDim,
-                    fontSize = 16.sp,
+                    style = Type.title,
                     fontWeight = FontWeight.Bold
                 )
             }
@@ -165,7 +165,7 @@ fun DraftCard(
             value = draft.title,
             onValueChange = { onChange(draft.copy(title = it)) },
             modifier = Modifier.fillMaxWidth(),
-            textStyle = TextStyle(color = Palette.Text, fontSize = 17.sp, fontWeight = FontWeight.Medium),
+            textStyle = Type.title.copy(color = Palette.Text),
             cursorBrush = SolidColor(Palette.Gold)
         )
 
@@ -190,7 +190,7 @@ fun DraftCard(
                         "下周一" to Dates.addDays(today, 7)
                     ).forEach { (label, day) ->
                         DropdownMenuItem(
-                            text = { Text(label, fontSize = 13.sp) },
+                            text = { Text(label, style = Type.body) },
                             onClick = {
                                 menu = null
                                 onChange(draft.copy(due = day))
@@ -198,7 +198,7 @@ fun DraftCard(
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text("不排期", fontSize = 13.sp) },
+                        text = { Text("不排期", style = Type.body) },
                         onClick = {
                             menu = null
                             onChange(draft.copy(due = null, time = null))
@@ -225,7 +225,7 @@ fun DraftCard(
                         "20:00" to 20 * 60
                     ).forEach { (label, m) ->
                         DropdownMenuItem(
-                            text = { Text(label, fontSize = 13.sp) },
+                            text = { Text(label, style = Type.body) },
                             onClick = {
                                 menu = null
                                 onChange(draft.copy(time = m, due = draft.due ?: today))
@@ -233,7 +233,7 @@ fun DraftCard(
                         )
                     }
                     DropdownMenuItem(
-                        text = { Text("不设时间", fontSize = 13.sp) },
+                        text = { Text("不设时间", style = Type.body) },
                         onClick = {
                             menu = null
                             onChange(draft.copy(time = null))
@@ -250,7 +250,7 @@ fun DraftCard(
                 ) {
                     Todo.GROUPS.forEach { g ->
                         DropdownMenuItem(
-                            text = { Text(g, fontSize = 13.sp) },
+                            text = { Text(g, style = Type.body) },
                             onClick = {
                                 menu = null
                                 onChange(draft.copy(group = g))
@@ -281,7 +281,7 @@ fun DraftCard(
                 Text(
                     "⚡ 重要",
                     color = if (draft.important) Palette.Gold else Palette.TextDim,
-                    fontSize = 12.sp
+                    style = Type.labelStrong
                 )
             }
             Spacer(Modifier.weight(1f))

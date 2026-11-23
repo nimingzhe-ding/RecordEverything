@@ -39,7 +39,7 @@ v1.x 的界面能用但"廉价"，具体表现在四处：
 | `GoldDeep` | `#7E6231` | 金色阴影/描边 |
 | `Text` | `#F3ECE0` | 主文字 |
 | `TextMid` | `#B6A996` | 元信息 |
-| `TextDim` | `#776B5A` | 弱提示、占位 |
+| `TextDim` | `#8E8170` | 弱提示、占位（对比度 5.17:1，见 §7） |
 | `Danger` | `#D8735F` | 过期 |
 | `Success` | `#6FB57C` | 完成 |
 
@@ -49,16 +49,26 @@ v1.x 的界面能用但"廉价"，具体表现在四处：
 
 ### 字号
 
-| 角色 | 字号 / 行高 | 字体 |
-| --- | --- | --- |
-| `displayLarge` | 44 / 48 | Serif，`letterSpacing -1` |
-| `displaySmall` | 26 / 32 | Serif |
-| `titleLarge` | 19 / 26 | Sans SemiBold |
-| `titleMedium` | 15 / 22 | Sans Medium |
-| `bodyLarge` | 15 / 23 | Sans |
-| `bodyMedium` | 13 / 20 | Sans |
-| `bodySmall` | 11 / 16 | Sans |
-| `labelSmall` | 10 / 14 | Sans Medium，`letterSpacing 1.2`（小标题用大写间距） |
+全 App 只有这一套尺度（`ui/Theme.kt` 的 `object Type`），**任何 `Text` 都从 `Type` 取，不写裸 `fontSize`**。
+
+| 角色 | 字号 / 行高 | 字体 | 用在哪 |
+| --- | --- | --- | --- |
+| `Type.display` | 62 / 68，`letterSpacing -2` | Serif | 今天页的日号，唯一的大字号 |
+| `Type.number` | 40 / 44，`letterSpacing -1` | Serif | 「全部」页的计数 |
+| `Type.month` | 30 / 34，`letterSpacing -0.5` | Serif | 日历页的月份、设置页的「设置」 |
+| `Type.stat` | 22 / 26 | Serif | 设置页的统计数字 |
+| `Type.screen` | 22 / 28 Medium | Sans | 页面主标题备用 |
+| `Type.title` | 17 / 24 Medium | Sans | 草稿卡标题、编辑框标题 |
+| `Type.body` | 14 / 21 | Sans | 列表行标题、正文、按钮文字 |
+| `Type.meta` | 12 / 17 | Sans | 日期、分组、备注这类第二层信息 |
+| `Type.caption` | 11 / 15 | Sans | 说明文字、页脚 |
+| `Type.eyebrow` | 11 / 14 Medium，`letterSpacing 1.5` | Sans | 分区标题（`过 期`、`今 天`） |
+| `Type.lunar` | 10 / 12 | Sans | 日历格子里的农历 |
+| `Type.nav` | 10 / 13，`letterSpacing 0.4` | Sans | 底部导航文字 |
+| `Type.label` / `labelStrong` | 12 / 16 | Sans / Medium | 胶囊、Chip |
+| `Type.button` | 13 / 18 SemiBold | Sans | 金色主按钮 |
+
+衬线只给四类"主角"：日期、计数、月份、统计数字。其余全部无衬线——衬线在小字号下会糊。
 
 ### 间距
 
@@ -116,7 +126,7 @@ v1.x 的界面能用但"廉价"，具体表现在四处：
 
 | 文件 | 改动 |
 | --- | --- |
-| `ui/Theme.kt` | 新的 Palette / Radius / Typography（衬线标题） |
+| `ui/Theme.kt` | Palette / Radius / `object Type`（13 档字号，衬线只给主角） |
 | `ui/Common.kt` | `GroupCard` / `RowDivider` / `Eyebrow` / `Ring` / `GoldButton` / 新 `Chip` |
 | `ui/TodoRow.kt` | 行内布局（无卡片），勾选动效，菜单图标化 |
 | `ui/TodayScreen.kt` | 日期主角 + 环形进度 + 分组卡 |
@@ -126,3 +136,45 @@ v1.x 的界面能用但"廉价"，具体表现在四处：
 | `ui/EditDialog.kt` | 自绘 BottomSheet 风格对话框 |
 | `ui/SettingsScreen.kt` | 分组卡 + 图标行 |
 | `MainActivity.kt` | 悬浮胶囊导航 |
+
+## 7. 可读性（v2.1）
+
+第一版令牌有两个实打实的问题，v2.1 修掉了。
+
+### 7.1 弱色对比度不达标
+
+`TextDim` 原来是 `#776B5A`，在三个底色上的对比度是：
+
+| 背景 | 对比度 | WCAG AA（4.5:1） |
+| --- | --- | --- |
+| `Bg` `#0D0B09` | 3.77:1 | ✗ |
+| `Surface` `#17130F` | 3.55:1 | ✗ |
+| `SurfaceHi` `#201A14` | 3.31:1 | ✗ |
+
+而 `TextDim` 承载的恰恰是最需要看清的东西：日期、分组、备注、农历、说明文字。提亮到 `#8E8170` 之后：
+
+| 背景 | 对比度 |
+| --- | --- |
+| `Bg` | **5.17:1** |
+| `Surface` | **4.86:1** |
+| `SurfaceHi` | **4.53:1** |
+
+三处全部过线。其余主色本来就够（`Text` 16.7 / `TextMid` 8.5 / `Gold` 11.4 / `Danger` 6.1 / `Success` 8.0）。
+
+### 7.2 不要用 alpha 稀释文字颜色
+
+上一版有多处 `Palette.TextDim.copy(alpha = 0.55f)` 这种写法。最糟的是日历里的农历：
+8sp + 55% 透明，实际对比度约 **1.9:1**，等于没显示。
+
+原则：**文字颜色只从令牌取，不叠 alpha**。需要更弱的信息层级，降低字号或用更弱的令牌，
+不要在同色上再乘透明度——深色底上 alpha 是乘法衰减，一乘就掉到不可读。
+
+现在全项目文字色已无 alpha 稀释（背景、描边、色块仍可用 alpha，那是另一回事）。
+
+### 7.3 字号不再手滑
+
+改前散落 18 种字号：8 / 10 / 11 / 12 / 13 / 14 / 14.5 / 15 / 16 / 17 / 18 / 19 / 24 / 26 / 30 / 40 / 44 / 62。
+其中 `8sp` 在高密度屏上不可读、`14.5sp` 是手滑、`10sp` 的分区标题在户外光线下一片糊。
+
+改后收敛到 `Type` 的 13 档，`10sp` 以下的字只剩日历农历与底部导航两处，
+分区标题从 10sp 提到 11sp 并加字距——字距能补小字号的可读性，但不能补 8sp 的窟窿。

@@ -61,19 +61,12 @@ fun AllScreen(
         ) {
             item {
                 Column(Modifier.padding(top = 16.dp, bottom = 16.dp)) {
-                    Text(
-                        "${counts.first}",
-                        color = Palette.Text,
-                        fontSize = 40.sp,
-                        lineHeight = 44.sp,
-                        fontFamily = FontFamily.Serif,
-                        letterSpacing = (-1).sp
-                    )
+                    Text("${counts.first}", color = Palette.Text, style = Type.number)
                     Spacer(Modifier.height(2.dp))
                     Text(
                         "件还没做完 · 今天 ${counts.second} 件 · 过期 ${counts.third} 件",
                         color = Palette.TextMid,
-                        fontSize = 12.sp
+                        style = Type.meta
                     )
                 }
             }
@@ -119,19 +112,14 @@ fun AllScreen(
                             Text(
                                 day?.let { Dates.formatDateShort(it) } ?: "收 集 箱",
                                 color = Palette.TextMid,
-                                fontSize = 11.sp,
-                                letterSpacing = if (day == null) 1.4.sp else 0.sp
+                                style = if (day == null) Type.eyebrow else Type.meta
                             )
                             if (day != null) {
                                 Spacer(Modifier.width(7.dp))
-                                Text(
-                                    Dates.weekdayName(day),
-                                    color = Palette.TextDim.copy(alpha = 0.7f),
-                                    fontSize = 10.sp
-                                )
+                                Text(Dates.weekdayName(day), color = Palette.TextDim, style = Type.meta)
                             }
                             Spacer(Modifier.weight(1f))
-                            Text("${todos.count { !it.done }}/${todos.size}", color = Palette.TextDim, fontSize = 10.sp)
+                            Text("${todos.count { !it.done }}/${todos.size}", color = Palette.TextDim, style = Type.meta)
                         }
                     }
                     item(key = "g-$day") {

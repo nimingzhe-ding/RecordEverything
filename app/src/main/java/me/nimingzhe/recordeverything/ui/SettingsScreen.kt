@@ -56,16 +56,9 @@ fun SettingsScreen(
     ) {
         item {
             Column(Modifier.padding(top = 16.dp, bottom = 18.dp)) {
-                Text(
-                    "设置",
-                    color = Palette.Text,
-                    fontSize = 26.sp,
-                    lineHeight = 32.sp,
-                    fontFamily = FontFamily.Serif,
-                    letterSpacing = (-0.5).sp
-                )
+                Text("设置", color = Palette.Text, style = Type.month)
                 Spacer(Modifier.height(4.dp))
-                Text("数据都在你自己的手机上", color = Palette.TextMid, fontSize = 12.sp)
+                Text("数据都在你自己的手机上", color = Palette.TextMid, style = Type.meta)
             }
         }
 
@@ -81,17 +74,17 @@ fun SettingsScreen(
                                     Brush.linearGradient(listOf(Palette.Gold.copy(alpha = 0.22f), Palette.SurfaceMax))
                                 ),
                             contentAlignment = Alignment.Center
-                        ) { Text("✦", color = Palette.Gold, fontSize = 17.sp) }
+                        ) { Text("✦", color = Palette.Gold, style = Type.title) }
                         Spacer(Modifier.width(13.dp))
                         Column {
                             Text(
                                 "RecordEverything",
                                 color = Palette.Text,
-                                fontSize = 15.sp,
+                                style = Type.body,
                                 fontWeight = FontWeight.Medium
                             )
                             Spacer(Modifier.height(2.dp))
-                            Text("记录 · 待办 · 日历，全部离线", color = Palette.TextDim, fontSize = 11.sp)
+                            Text("记录 · 待办 · 日历，全部离线", color = Palette.TextDim, style = Type.caption)
                         }
                     }
                     Spacer(Modifier.height(20.dp))
@@ -126,13 +119,13 @@ fun SettingsScreen(
             }
         }
 
-        item { SectionTitle("危 险 操 作", accent = Palette.Danger.copy(alpha = 0.85f)) }
+        item { SectionTitle("危 险 操 作", accent = Palette.Danger) }
         item {
             GroupCard(accent = Palette.Danger) {
                 Column(Modifier.padding(18.dp)) {
-                    Text("清掉全部待办", color = Palette.Text, fontSize = 14.sp)
+                    Text("清掉全部待办", color = Palette.Text, style = Type.body)
                     Spacer(Modifier.height(4.dp))
-                    Text("删掉之后不可恢复，建议先导出一份 JSON。", color = Palette.TextDim, fontSize = 11.sp)
+                    Text("删掉之后不可恢复，建议先导出一份 JSON。", color = Palette.TextDim, style = Type.caption)
                     Spacer(Modifier.height(14.dp))
                     Box(
                         Modifier
@@ -141,7 +134,7 @@ fun SettingsScreen(
                             .clickable { confirmClear = true }
                             .padding(horizontal = 16.dp, vertical = 9.dp)
                     ) {
-                        Text("清空", color = Palette.Danger, fontSize = 12.sp, fontWeight = FontWeight.Medium)
+                        Text("清空", color = Palette.Danger, style = Type.labelStrong)
                     }
                 }
             }
@@ -154,7 +147,7 @@ fun SettingsScreen(
                     .padding(top = 28.dp, bottom = 8.dp),
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text("本地优先 · 一个 JSON 装下全部记录", color = Palette.TextDim, fontSize = 10.sp)
+                Text("本地优先 · 一个 JSON 装下全部记录", color = Palette.TextDim, style = Type.caption)
             }
         }
     }
@@ -162,8 +155,8 @@ fun SettingsScreen(
     if (confirmClear) {
         AlertDialog(
             onDismissRequest = { confirmClear = false },
-            title = { Text("确定清空？", fontSize = 16.sp) },
-            text = { Text("所有待办会被删掉，无法恢复。", color = Palette.TextMid, fontSize = 13.sp) },
+            title = { Text("确定清空？", style = Type.title) },
+            text = { Text("所有待办会被删掉，无法恢复。", color = Palette.TextMid, style = Type.meta) },
             confirmButton = {
                 TextButton(onClick = {
                     confirmClear = false
@@ -185,15 +178,9 @@ fun SettingsScreen(
 @Composable
 private fun androidx.compose.foundation.layout.RowScope.Stat(label: String, value: String) {
     Column(Modifier.weight(1f)) {
-        Text(
-            value,
-            color = Palette.Text,
-            fontSize = 24.sp,
-            lineHeight = 28.sp,
-            fontFamily = FontFamily.Serif
-        )
+        Text(value, color = Palette.Text, style = Type.stat)
         Spacer(Modifier.height(3.dp))
-        Text(label, color = Palette.TextDim, fontSize = 10.sp, letterSpacing = 1.sp)
+        Text(label, color = Palette.TextDim, style = Type.caption)
     }
 }
 
@@ -212,14 +199,14 @@ private fun ActionRow(title: String, sub: String, icon: String, onClick: () -> U
                 .clip(CircleShape)
                 .background(Palette.SurfaceMax),
             contentAlignment = Alignment.Center
-        ) { Text(icon, color = Palette.GoldSoft, fontSize = 13.sp) }
+        ) { Text(icon, color = Palette.GoldSoft, style = Type.body) }
         Spacer(Modifier.width(13.dp))
         Column(Modifier.weight(1f)) {
-            Text(title, color = Palette.Text, fontSize = 14.sp)
+            Text(title, color = Palette.Text, style = Type.body)
             Spacer(Modifier.height(3.dp))
-            Text(sub, color = Palette.TextDim, fontSize = 11.sp)
+            Text(sub, color = Palette.TextDim, style = Type.caption)
         }
-        Text("›", color = Palette.TextDim, fontSize = 18.sp)
+        Text("›", color = Palette.TextDim, style = Type.title)
     }
 }
 
@@ -231,7 +218,7 @@ private fun InfoRow(label: String, value: String) {
             .padding(horizontal = 18.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(label, color = Palette.TextDim, fontSize = 12.sp, modifier = Modifier.width(64.dp))
-        Text(value, color = Palette.TextMid, fontSize = 12.sp)
+        Text(label, color = Palette.TextDim, style = Type.meta, modifier = Modifier.width(64.dp))
+        Text(value, color = Palette.TextMid, style = Type.meta)
     }
 }

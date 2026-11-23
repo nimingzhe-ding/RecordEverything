@@ -81,9 +81,8 @@ fun CalendarScreen(
                         Text(
                             w,
                             Modifier.weight(1f),
-                            color = if (i == 0 || i == 6) Palette.TextDim.copy(alpha = 0.7f) else Palette.TextMid,
-                            fontSize = 10.sp,
-                            letterSpacing = 0.5.sp,
+                            color = if (i == 0 || i == 6) Palette.TextDim else Palette.TextMid,
+                            style = Type.eyebrow,
                             textAlign = TextAlign.Center
                         )
                     }
@@ -118,7 +117,7 @@ fun CalendarScreen(
                             Text(
                                 if (list.isEmpty()) "空" else "${list.count { !it.done }} / ${list.size}",
                                 color = Palette.TextDim,
-                                fontSize = 10.sp
+                                style = Type.meta
                             )
                         }
                         Spacer(Modifier.height(9.dp))
@@ -175,21 +174,9 @@ private fun MonthHeader(
         verticalAlignment = Alignment.CenterVertically
     ) {
         Column {
-            Text(
-                "$year",
-                color = Palette.TextDim,
-                fontSize = 10.sp,
-                letterSpacing = 1.6.sp
-            )
+            Text("$year", color = Palette.TextDim, style = Type.eyebrow)
             Spacer(Modifier.height(2.dp))
-            Text(
-                "${month0 + 1} 月",
-                color = Palette.Text,
-                fontSize = 30.sp,
-                lineHeight = 34.sp,
-                fontFamily = FontFamily.Serif,
-                letterSpacing = (-0.5).sp
-            )
+            Text("${month0 + 1} 月", color = Palette.Text, style = Type.month)
         }
         Spacer(Modifier.weight(1f))
         GhostButton("今天", onClick = onToday)
@@ -210,7 +197,7 @@ private fun NavButton(label: String, onClick: () -> Unit) {
             .border(1.dp, Palette.Line, CircleShape)
             .clickable { onClick() },
         contentAlignment = Alignment.Center
-    ) { Text(label, color = Palette.TextMid, fontSize = 15.sp) }
+    ) { Text(label, color = Palette.TextMid, style = Type.title) }
 }
 
 @Composable
@@ -309,19 +296,17 @@ private fun DayCell(
                 color = when {
                     isSelected -> Color(0xFF231A0A)
                     isToday -> Palette.Gold
-                    else -> Palette.Text.copy(alpha = 0.88f)
+                    else -> Palette.Text
                 },
-                fontSize = 13.sp,
-                lineHeight = 15.sp,
+                style = Type.body,
                 fontWeight = if (isSelected || isToday) FontWeight.SemiBold else FontWeight.Normal
             )
         }
         Spacer(Modifier.height(1.dp))
         Text(
             Lunar.short(millis),
-            color = if (isSelected) Palette.GoldSoft else Palette.TextDim.copy(alpha = 0.55f),
-            fontSize = 8.sp,
-            lineHeight = 9.sp,
+            color = if (isSelected) Palette.GoldSoft else Palette.TextDim,
+            style = Type.lunar,
             maxLines = 1
         )
         Spacer(Modifier.height(3.dp))

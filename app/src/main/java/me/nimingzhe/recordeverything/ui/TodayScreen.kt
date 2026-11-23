@@ -189,24 +189,16 @@ private fun DateHero(now: Long, open: Int, done: Int, over: Int, progress: Float
             Text(
                 if (done + open == 0) "—" else "${(progress * 100).toInt()}%",
                 color = Palette.TextMid,
-                fontSize = 11.sp
+                style = Type.meta
             )
         }
         Spacer(Modifier.height(10.dp))
-        Text(
-            day.toString(),
-            color = Palette.Text,
-            fontSize = 62.sp,
-            lineHeight = 66.sp,
-            fontFamily = FontFamily.Serif,
-            fontWeight = FontWeight.Normal,
-            letterSpacing = (-2).sp
-        )
+        Text(day.toString(), color = Palette.Text, style = Type.display)
         Spacer(Modifier.height(2.dp))
         Text(
             summary(open = open, done = done, over = over),
             color = Palette.TextMid,
-            fontSize = 12.sp
+            style = Type.meta
         )
     }
 }

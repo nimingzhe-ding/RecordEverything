@@ -83,8 +83,7 @@ fun TodoRow(
                 Text(
                     todo.title,
                     color = if (todo.done) Palette.TextDim else Palette.Text,
-                    fontSize = 14.5.sp,
-                    lineHeight = 21.sp,
+                    style = Type.body,
                     fontWeight = if (highlight) FontWeight.Medium else FontWeight.Normal,
                     textDecoration = if (todo.done) TextDecoration.LineThrough else TextDecoration.None,
                     maxLines = 2,
@@ -100,8 +99,8 @@ fun TodoRow(
                     Spacer(Modifier.height(4.dp))
                     Text(
                         meta,
-                        color = if (overdue) Palette.Danger.copy(alpha = 0.85f) else Palette.TextDim,
-                        fontSize = 11.sp,
+                        color = if (overdue) Palette.Danger else Palette.TextDim,
+                        style = Type.meta,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
@@ -116,7 +115,7 @@ fun TodoRow(
                             .clickable { menu = true },
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("⋯", color = Palette.TextDim.copy(alpha = 0.8f), fontSize = 15.sp)
+                        Text("⋯", color = Palette.TextDim, style = Type.title)
                     }
                     DropdownMenu(
                         expanded = menu,
@@ -141,7 +140,7 @@ private fun MenuItem(text: String, danger: Boolean = false, onClick: () -> Unit)
         text = {
             Text(
                 text,
-                fontSize = 13.sp,
+                style = Type.body,
                 color = if (danger) Palette.Danger else Palette.Text
             )
         },
@@ -163,16 +162,14 @@ fun SectionTitle(
             .padding(start = 4.dp, end = 4.dp, top = 22.dp, bottom = 9.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Text(
-            title,
-            color = accent,
-            fontSize = 10.sp,
-            fontWeight = FontWeight.Medium,
-            letterSpacing = 1.6.sp
-        )
+        Text(title, color = accent, style = Type.eyebrow)
         if (count != null) {
             Spacer(Modifier.width(7.dp))
-            Text("$count", color = accent.copy(alpha = 0.6f), fontSize = 10.sp, letterSpacing = 1.sp)
+            Text(
+                "$count",
+                color = if (accent == Palette.TextDim) Palette.TextDim else accent,
+                style = Type.eyebrow
+            )
         }
         Spacer(Modifier.weight(1f))
     }
