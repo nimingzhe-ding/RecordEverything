@@ -1,5 +1,6 @@
 package me.nimingzhe.recordeverything.ui
 
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -13,6 +14,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardActions
@@ -28,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.SolidColor
@@ -40,29 +43,43 @@ import me.nimingzhe.recordeverything.data.Todo
 import me.nimingzhe.recordeverything.nl.TodoParser
 import me.nimingzhe.recordeverything.util.Dates
 
-/** 底部一句话输入条。 */
+/**
+ * 悬浮的一句话输入条。它是这个 App 唯一的入口，所以给足存在感：
+ * 胶囊底 + 金色发丝边 + 金色圆形发送键。
+ */
 @Composable
 fun QuickAddBar(
-    hint: String = "说一句：明天下午三点 开会",
+    hint: String = "说一句，比如：明天下午三点 开会",
     onSend: (String) -> Unit,
     modifier: Modifier = Modifier
 ) {
     var text by remember { mutableStateOf("") }
+    val active = text.isNotBlank()
+    val scale by animateFloatAsState(if (active) 1f else 0.94f, label = "sendScale")
 
     Row(
         modifier
             .fillMaxWidth()
-            .background(Palette.Bg)
-            .padding(horizontal = 12.dp, vertical = 8.dp),
+            .background(
+                Brush.verticalGradient(
+                    listOf(Color.Transparent, Palette.Bg.copy(alpha = 0.96f)),
+                    startY = 0f
+                )
+            )
+            .padding(horizontal = 18.dp, vertical = 10.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
         Row(
             Modifier
                 .weight(1f)
                 .clip(RoundedCornerShape(50))
-                .background(Palette.Surface)
-                .border(1.dp, Palette.Divider, RoundedCornerShape(50))
-                .padding(horizontal = 16.dp, vertical = 12.dp),
+                .background(Palette.SurfaceHi)
+                .border(
+                    1.dp,
+                    if (active) Palette.Gold.copy(alpha = 0.55f) else Palette.Line,
+                    RoundedCornerShape(50)
+                )
+                .padding(start = 18.dp, end = 6.dp, top = 6.dp, bottom = 6.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
             BasicTextField(
@@ -82,31 +99,44 @@ fun QuickAddBar(
                 decorationBox = { inner ->
                     Box {
                         if (text.isEmpty()) {
-                            Text(hint, color = Palette.TextDim, fontSize = 14.sp, maxLines = 1)
+                            Text(hint, color = Palette.TextDim, fontSize = 13.sp, maxLines = 1)
                         }
                         inner()
                     }
                 }
             )
+            Box(
+                Modifier
+                    .size(36.dp)
+                    .scale(scale)
+                    .clip(CircleShape)
+                    .background(
+                        if (active) Brush.linearGradient(listOf(Palette.Gold, Palette.GoldSoft))
+                        else Brush.linearGradient(listOf(Palette.SurfaceMax, Palette.SurfaceMax))
+                    )
+                    .clickable {
+                        if (text.isNotBlank()) {
+                            onSend(text)
+                            text = ""
+                        }
+                    },
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    "↑",
+                    color = if (active) Color(0xFF231A0A) else Palette.TextDim,
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
-        Spacer(Modifier.width(8.dp))
-        Box(
-            Modifier
-                .size(44.dp)
-                .clip(RoundedCornerShape(50))
-                .background(Brush.linearGradient(listOf(Palette.Gold, Palette.GoldDim)))
-                .clickable {
-                    if (text.isNotBlank()) {
-                        onSend(text)
-                        text = ""
-                    }
-                },
-            contentAlignment = Alignment.Center
-        ) { Text("↑", color = Color(0xFF20180C), fontSize = 17.sp, fontWeight = FontWeight.Bold) }
     }
 }
 
-/** 解析出的草稿卡片：确认前可以改日期 / 时间 / 分组。 */
+/**
+ * 解析草稿卡。浮在输入条上方，用户确认之前它是"半透明草稿"的身份：
+ * 金色描边 + 顶部一行小字说明解析结果。
+ */
 @Composable
 fun DraftCard(
     draft: Todo,
@@ -120,15 +150,14 @@ fun DraftCard(
 
     Column(
         Modifier
-            .fillMaxWidth()
-            .padding(horizontal = 12.dp, vertical = 6.dp)
-            .clip(RoundedCornerShape(18.dp))
-            .background(Palette.Surface)
-            .border(1.dp, Palette.Gold.copy(alpha = 0.35f), RoundedCornerShape(18.dp))
-            .padding(14.dp)
+            .padding(horizontal = 18.dp)
+            .clip(RoundedCornerShape(Radius.lg))
+            .background(Palette.SurfaceHi)
+            .border(1.dp, Palette.Gold.copy(alpha = 0.45f), RoundedCornerShape(Radius.lg))
+            .padding(16.dp)
     ) {
         if (hint.isNotBlank()) {
-            Text(hint, color = Palette.Gold, fontSize = 11.sp)
+            Eyebrow(hint, color = Palette.Gold.copy(alpha = 0.9f))
             Spacer(Modifier.height(8.dp))
         }
 
@@ -142,14 +171,18 @@ fun DraftCard(
 
         Spacer(Modifier.height(12.dp))
 
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        Row(horizontalArrangement = Arrangement.spacedBy(7.dp)) {
             // 日期
             Box {
-                DraftChip(
+                Chip(
                     text = draft.due?.let { Dates.chip(it) } ?: "不排期",
-                    active = draft.due != null
+                    selected = draft.due != null,
+                    leading = "◷"
                 ) { menu = 0 }
-                DropdownMenu(expanded = menu == 0, onDismissRequest = { menu = null }) {
+                DropdownMenu(
+                    expanded = menu == 0,
+                    onDismissRequest = { menu = null }
+                ) {
                     listOf(
                         "今天" to today,
                         "明天" to Dates.addDays(today, 1),
@@ -175,11 +208,15 @@ fun DraftCard(
             }
             // 时间
             Box {
-                DraftChip(
+                Chip(
                     text = draft.time?.let { TodoParser.fmtMinute(it) } ?: "不设时间",
-                    active = draft.time != null
+                    selected = draft.time != null,
+                    leading = "◔"
                 ) { menu = 1 }
-                DropdownMenu(expanded = menu == 1, onDismissRequest = { menu = null }) {
+                DropdownMenu(
+                    expanded = menu == 1,
+                    onDismissRequest = { menu = null }
+                ) {
                     listOf(
                         "09:00" to 9 * 60,
                         "12:00" to 12 * 60,
@@ -191,12 +228,7 @@ fun DraftCard(
                             text = { Text(label, fontSize = 13.sp) },
                             onClick = {
                                 menu = null
-                                onChange(
-                                    draft.copy(
-                                        time = m,
-                                        due = draft.due ?: today
-                                    )
-                                )
+                                onChange(draft.copy(time = m, due = draft.due ?: today))
                             }
                         )
                     }
@@ -211,8 +243,11 @@ fun DraftCard(
             }
             // 分组
             Box {
-                DraftChip(text = draft.group, active = false) { menu = 2 }
-                DropdownMenu(expanded = menu == 2, onDismissRequest = { menu = null }) {
+                Chip(text = draft.group, selected = false, leading = "◈") { menu = 2 }
+                DropdownMenu(
+                    expanded = menu == 2,
+                    onDismissRequest = { menu = null }
+                ) {
                     Todo.GROUPS.forEach { g ->
                         DropdownMenuItem(
                             text = { Text(g, fontSize = 13.sp) },
@@ -226,17 +261,22 @@ fun DraftCard(
             }
         }
 
-        Spacer(Modifier.height(12.dp))
+        Spacer(Modifier.height(14.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
             Box(
                 Modifier
                     .clip(RoundedCornerShape(50))
                     .background(
-                        if (draft.important) Palette.Gold.copy(alpha = 0.18f) else Palette.SurfaceHi
+                        if (draft.important) Palette.Gold.copy(alpha = 0.18f) else Palette.SurfaceMax
+                    )
+                    .border(
+                        1.dp,
+                        if (draft.important) Palette.Gold.copy(alpha = 0.5f) else Palette.Line,
+                        RoundedCornerShape(50)
                     )
                     .clickable { onChange(draft.copy(important = !draft.important)) }
-                    .padding(horizontal = 12.dp, vertical = 6.dp)
+                    .padding(horizontal = 13.dp, vertical = 7.dp)
             ) {
                 Text(
                     "⚡ 重要",
@@ -245,43 +285,9 @@ fun DraftCard(
                 )
             }
             Spacer(Modifier.weight(1f))
-            Text(
-                "取消",
-                color = Palette.TextDim,
-                fontSize = 13.sp,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .clickable { onCancel() }
-                    .padding(horizontal = 14.dp, vertical = 8.dp)
-            )
+            GhostButton("取消", onClick = onCancel)
             Spacer(Modifier.width(4.dp))
-            Box(
-                Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(Brush.linearGradient(listOf(Palette.Gold, Palette.GoldDim)))
-                    .clickable { onConfirm() }
-                    .padding(horizontal = 18.dp, vertical = 9.dp)
-            ) {
-                Text("加上", color = Color(0xFF20180C), fontSize = 13.sp, fontWeight = FontWeight.SemiBold)
-            }
+            GoldButton("加上", enabled = draft.title.isNotBlank(), onClick = onConfirm)
         }
-    }
-}
-
-@Composable
-private fun DraftChip(text: String, active: Boolean, onClick: () -> Unit) {
-    Box(
-        Modifier
-            .clip(RoundedCornerShape(50))
-            .background(if (active) Palette.Gold.copy(alpha = 0.14f) else Palette.SurfaceHi)
-            .border(
-                1.dp,
-                if (active) Palette.Gold.copy(alpha = 0.45f) else Palette.Divider,
-                RoundedCornerShape(50)
-            )
-            .clickable { onClick() }
-            .padding(horizontal = 12.dp, vertical = 7.dp)
-    ) {
-        Text(text, color = if (active) Palette.Gold else Palette.TextDim, fontSize = 12.sp)
     }
 }

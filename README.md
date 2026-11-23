@@ -7,6 +7,9 @@
 [docs/reverse-engineering.md](docs/reverse-engineering.md)。本项目不是它的复刻：没有账号、没有会员、
 没有云同步、没有埋点，所有数据只写在本机一个 JSON 文件里。
 
+界面按 [docs/design.md](docs/design.md) 里的一套设计规范实现：纸质手帐的暖 + 工具的静，
+炭黑偏暖的底、只在强调处出现的金色、一卡一组的分区、1px 发丝线而不是阴影。
+
 <p align="center">
   <img src="docs/screenshots/today.png" width="24%" alt="今天" />
   <img src="docs/screenshots/calendar.png" width="24%" alt="月历" />
@@ -40,7 +43,7 @@
 | 全部 | 按「未完成 / 今天 / 本周 / 已完成 / 全部」筛选，按分组收窄，列表按日期分段（含「收集箱」段） |
 | 编辑 | 标题、备注、日期、时间、分组、重要标记，走一个对话框改完 |
 | 数据 | 导出 Markdown 清单（带 `- [ ]` 勾选框）、导出 JSON 完整备份、导出 CSV；清空需二次确认 |
-| 外观 | 深色暖金主题，Material 3 |
+| 外观 | 深色暖金主题（`#0D0B09` 底 + `#E5C07A` 金），衬线大标题，悬浮胶囊导航，Material 3；规范见 [docs/design.md](docs/design.md) |
 
 ## 设计取舍
 
@@ -58,6 +61,24 @@
 **为什么用点而不是数字。** 日历格子只有约 40dp 宽，塞数字会挤掉农历、也会让一屏里出现大量数字噪声。
 点的作用是「这天有事」，具体几件点进去看，信息密度和可读性都更好。
 
+## 视觉
+
+2.0 版整体重做了视觉层。三条原则：
+
+1. **一卡一组，而不是一行一卡。** 同一分区的所有行共享一张卡，行间用 1px 发丝线（`#2A221A`）分隔。
+   深色界面里阴影几乎看不见，能表达层次的是「底色差 + 线」，不是「卡片投影」。
+2. **层级靠字号与字族，不靠颜色堆叠。** 日期用 62sp 衬线体做主角，分区标题是 10sp 加宽字距的
+   全大写小字（`过 期`、`今 天`、`做 完`），正文 14.5sp，元信息 11sp 弱色。整个界面只有四档字号。
+3. **金色只做强调。** 金色出现在勾选圈、选中日、主按钮、重要条上；大面积填充只用于选中态的
+   底部导航胶囊。其余层次全部由三层 surface（`#17130F` / `#201A14` / `#2A2219`）推出来。
+
+动效只有三处，都是 150–220ms：勾选填充、草稿卡进场、完成度圆环。没有弹跳、没有长动画。
+
+实现时踩到的一个真坑：Material 3 的 `Text` 默认继承 `MaterialTheme.typography.bodyLarge`，
+包括它的 `lineHeight = 23sp`。只设 `fontSize = 8.sp` 的农历文字仍然占 23sp 行高，把日历格子撑爆、
+圆点被裁掉。解法是在主题里用 `CompositionLocalProvider(LocalTextStyle provides TextStyle(color = ...))`
+清空默认字号与行高，让每处 `Text` 自己决定。
+
 ## 构建
 
 环境：JDK 17、Android SDK（platform 34）、Gradle 8.2.1（wrapper 已带）。
@@ -71,7 +92,7 @@ echo "sdk.dir=$HOME/Library/Android/sdk" > local.properties
 adb install -r app/build/outputs/apk/debug/app-debug.apk
 ```
 
-- `minSdk 24` / `targetSdk 34` / `versionName 1.0.0`
+- `minSdk 24` / `targetSdk 34` / `versionName 2.0.0`
 - 依赖只有 Compose（BOM 2024.02.02）、AndroidX core/activity/lifecycle、JUnit
 - 无第三方 SDK、无广告、无统计、无网络权限（连 `INTERNET` 都没申请）
 

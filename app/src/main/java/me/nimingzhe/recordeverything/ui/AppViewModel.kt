@@ -188,12 +188,14 @@ class AppViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     /** 今天：过期未完成 + 今天 + 已完成（沉底）。 */
+    /**
+     * 今天页只认「排期正好是今天」的条目。
+     * 收集箱（due == null）归「全部」页，过期归过期区，
+     * 以前把两者都算进来，会让今天页混进无关条目、把历史完成也算成"今天做完"。
+     */
     fun todayList(): List<Todo> {
         val today = Dates.startOfDay(System.currentTimeMillis())
-        val tomorrow = Dates.addDays(today, 1)
-        return _state.value.todos
-            .filter { t -> t.due == null || (t.due != null && t.due < tomorrow) }
-            .sorted()
+        return _state.value.todos.filter { it.due == today }.sorted()
     }
 
     fun overdue(): List<Todo> {

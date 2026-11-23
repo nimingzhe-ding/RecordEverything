@@ -1,6 +1,12 @@
 package me.nimingzhe.recordeverything.ui
 
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.slideInVertically
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -16,6 +22,8 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Brush
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -24,7 +32,8 @@ import me.nimingzhe.recordeverything.util.Dates
 import java.util.Calendar
 
 /**
- * 今天：过期未完成在最上（红），然后今天要做的，最后是今天已完成的。
+ * 今天。视觉重心是那个衬线的大号日期数字——它回答"现在是哪天"，
+ * 比任何标题都直接。下面才是清单。
  */
 @Composable
 fun TodayScreen(
@@ -45,110 +54,160 @@ fun TodayScreen(
     val overdueIds = overdue.map { it.id }.toSet()
     val openToday = todayList.filter { !it.done && it.id !in overdueIds }
     val doneToday = todayList.filter { it.done }
+    val total = openToday.size + doneToday.size
+    val progress = if (total == 0) 0f else doneToday.size.toFloat() / total
 
-    Column(Modifier.fillMaxSize()) {
-        LazyColumn(
-            Modifier.weight(1f),
-            contentPadding = PaddingValues(start = 12.dp, end = 12.dp, top = 8.dp, bottom = 20.dp),
-            verticalArrangement = Arrangement.spacedBy(6.dp)
-        ) {
-            item {
-                Column(Modifier.padding(horizontal = 6.dp, vertical = 6.dp)) {
-                    Text(
-                        headline(now),
-                        color = Palette.Text,
-                        fontSize = 26.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Text(summary(openToday.size, doneToday.size, overdue.size), color = Palette.TextDim, fontSize = 12.sp)
-                }
-            }
-
-            if (overdue.isNotEmpty()) {
-                item { SectionHeader("过期", "${overdue.size} 件", Palette.Expense) }
-                items(overdue, key = { it.id }) { t ->
-                    TodoRow(
-                        todo = t,
-                        showDate = true,
-                        onToggle = { onToggle(t.id) },
-                        onEdit = { onEdit(t) },
-                        onTomorrow = { onTomorrow(t.id) },
-                        onToday = { onToday(t.id) },
-                        onDelete = { onDelete(t.id) }
-                    )
-                }
-            }
-
-            item {
-                SectionHeader(
-                    "今天",
-                    if (openToday.isEmpty()) "空了" else "${openToday.size} 件待办"
-                )
-            }
-            if (openToday.isEmpty()) {
+    Box(
+        Modifier
+            .fillMaxSize()
+            .background(Brush.verticalGradient(listOf(Palette.BgTop, Palette.Bg), 0f, 520f))
+    ) {
+        Column(Modifier.fillMaxSize()) {
+            LazyColumn(
+                Modifier.weight(1f),
+                contentPadding = PaddingValues(start = 18.dp, end = 18.dp, bottom = 24.dp)
+            ) {
                 item {
-                    Column(Modifier.padding(horizontal = 4.dp)) {
-                        EmptyHint("今天没有待办，舒服")
-                        Text(
-                            "试试这样说一句：",
-                            color = Palette.TextDim,
-                            fontSize = 11.sp,
-                            modifier = Modifier.padding(start = 8.dp, bottom = 6.dp)
+                    DateHero(
+                        now = now,
+                        open = openToday.size,
+                        done = doneToday.size,
+                        over = overdue.size,
+                        progress = progress
+                    )
+                }
+
+                if (overdue.isNotEmpty()) {
+                    item { SectionTitle("过 期", overdue.size, Palette.Danger) }
+                    item {
+                        TodoCard(
+                            todos = overdue,
+                            showDate = true,
+                            onToggle = onToggle,
+                            onEdit = onEdit,
+                            onTomorrow = onTomorrow,
+                            onToday = onToday,
+                            onDelete = onDelete,
+                            accent = Palette.Danger
                         )
-                        Column(
-                            Modifier.padding(horizontal = 8.dp),
-                            verticalArrangement = Arrangement.spacedBy(6.dp)
-                        ) {
+                    }
+                }
+
+                item { SectionTitle("今 天", openToday.size) }
+
+                if (openToday.isEmpty() && doneToday.isEmpty()) {
+                    item {
+                        GroupCard {
+                            Column(Modifier.padding(vertical = 8.dp)) {
+                                EmptyBlock("今天还空着", "说一句话就能记下来")
+                            }
+                        }
+                    }
+                    item {
+                        Spacer(Modifier.height(6.dp))
+                        Eyebrow("试 试 这 样 说", modifier = Modifier.padding(start = 6.dp, bottom = 8.dp))
+                    }
+                    item {
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             samples.chunked(2).forEach { row ->
-                                Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
-                                    row.forEach { s -> Chip(s) { onAdd(s) } }
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    row.forEach { s ->
+                                        Chip(s, leading = "↗") { onAdd(s) }
+                                    }
                                 }
                             }
                         }
                     }
+                } else if (openToday.isNotEmpty()) {
+                    item {
+                        TodoCard(
+                            todos = openToday,
+                            showDate = false,
+                            onToggle = onToggle,
+                            onEdit = onEdit,
+                            onTomorrow = onTomorrow,
+                            onToday = onToday,
+                            onDelete = onDelete
+                        )
+                    }
                 }
-            } else {
-                items(openToday, key = { it.id }) { t ->
-                    TodoRow(
-                        todo = t,
-                        showDate = false,
-                        onToggle = { onToggle(t.id) },
-                        onEdit = { onEdit(t) },
-                        onTomorrow = { onTomorrow(t.id) },
-                        onToday = { onToday(t.id) },
-                        onDelete = { onDelete(t.id) }
+
+                if (doneToday.isNotEmpty()) {
+                    item { SectionTitle("已 做 完", doneToday.size) }
+                    item {
+                        TodoCard(
+                            todos = doneToday,
+                            showDate = false,
+                            onToggle = onToggle,
+                            onEdit = onEdit,
+                            onTomorrow = onTomorrow,
+                            onToday = onToday,
+                            onDelete = onDelete
+                        )
+                    }
+                }
+
+                item { Spacer(Modifier.height(18.dp)) }
+            }
+
+            state.draft?.let { draft ->
+                AnimatedVisibility(
+                    visible = true,
+                    enter = fadeIn() + slideInVertically(initialOffsetY = { it / 3 }),
+                    exit = fadeOut()
+                ) {
+                    DraftCard(
+                        draft = draft,
+                        hint = state.draftHint,
+                        onChange = onDraftChange,
+                        onConfirm = onConfirm,
+                        onCancel = onCancel
                     )
                 }
             }
-
-            if (doneToday.isNotEmpty()) {
-                item { SectionHeader("已做完", "${doneToday.size} 件") }
-                items(doneToday, key = { it.id }) { t ->
-                    TodoRow(
-                        todo = t,
-                        showDate = false,
-                        onToggle = { onToggle(t.id) },
-                        onEdit = { onEdit(t) },
-                        onTomorrow = { onTomorrow(t.id) },
-                        onToday = { onToday(t.id) },
-                        onDelete = { onDelete(t.id) }
-                    )
-                }
-            }
-
-            item { Spacer(Modifier.height(16.dp)) }
+            QuickAddBar(onSend = onAdd)
         }
+    }
+}
 
-        state.draft?.let { draft ->
-            DraftCard(
-                draft = draft,
-                hint = state.draftHint,
-                onChange = onDraftChange,
-                onConfirm = onConfirm,
-                onCancel = onCancel
+/**
+ * 顶部日期区：衬线大数字 + 星期 + 完成度细环。
+ */
+@Composable
+private fun DateHero(now: Long, open: Int, done: Int, over: Int, progress: Float) {
+    val c = Dates.calendar().apply { timeInMillis = now }
+    val month = c.get(Calendar.MONTH) + 1
+    val day = c.get(Calendar.DAY_OF_MONTH)
+    val weekday = Dates.weekdayName(now)
+
+    Column(Modifier.padding(top = 10.dp, bottom = 4.dp)) {
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Eyebrow("${Dates.year(now)} 年 $month 月  ·  $weekday")
+            Spacer(Modifier.weight(1f))
+            Ring(progress = progress, size = 30.dp, stroke = 2.5.dp)
+            Spacer(Modifier.width(9.dp))
+            Text(
+                if (done + open == 0) "—" else "${(progress * 100).toInt()}%",
+                color = Palette.TextMid,
+                fontSize = 11.sp
             )
         }
-        QuickAddBar(onSend = onAdd)
+        Spacer(Modifier.height(10.dp))
+        Text(
+            day.toString(),
+            color = Palette.Text,
+            fontSize = 62.sp,
+            lineHeight = 66.sp,
+            fontFamily = FontFamily.Serif,
+            fontWeight = FontWeight.Normal,
+            letterSpacing = (-2).sp
+        )
+        Spacer(Modifier.height(2.dp))
+        Text(
+            summary(open = open, done = done, over = over),
+            color = Palette.TextMid,
+            fontSize = 12.sp
+        )
     }
 }
 
@@ -167,7 +226,11 @@ fun headline(now: Long): String {
 }
 
 fun summary(open: Int, done: Int, over: Int): String = buildString {
-    if (over > 0) append("$over 件过期 · ")
-    append("今天 $open 件未完成")
+    if (over > 0) append("$over 件过期没做 · ")
+    when {
+        open == 0 && done == 0 -> append("今天还没安排")
+        open == 0 -> append("今天的事都做完了")
+        else -> append("$open 件待办")
+    }
     if (done > 0) append(" · 已做 $done 件")
 }
